@@ -407,8 +407,8 @@ function checkCollitionHorizontal(){
 function Score(){
   ctx.fillStyle = "black"
   ctx.font = " bold 20px Arial"
-  ctx.fillText('Player 1: ' +characters[0].points, 100,50)
-  ctx.fillText('Player 2: ' +characters[1].points, canvas.width - 300,50)
+  ctx.fillText(characters[0].name + ' : '  +characters[0].points, 100,50)
+  ctx.fillText(characters[1].name + ' : ' +characters[1].points, canvas.width - 300,50)
 }
 
 
