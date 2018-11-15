@@ -9,12 +9,26 @@ canvas.height = 549
 
 var interval = 0
 var frames = 0
+var trouble = 1000
 var presentations = true
 var buttons = []
 var characters = []
+var imgObstacles = ['./Image/1.png',
+                    './Image/2.png',
+                    './Image/3.png',
+                    './Image/brick_1.png',
+                    './Image/brick_2.png',
+                    './Image/brick_3.png',
+                    './Image/moss_obstacle_1.png',
+                    './Image/moss_obstacle_1.png',
+                    './Image/moss_obstacle_2.png',
+                    './Image/moss_tile.png']
+var obstaclesVertical = []
+var obstaclesHorizontal = []
 var images = {
-  lola: './Image/lola.png',
-  lobo: './Image/lola.png'
+  lola: './Image/lily.png',
+  manni: './Image/manni.png'
+
 }
     
 
@@ -28,14 +42,18 @@ function Board(){
     this.width=canvas.width
     this.height=canvas.height
     this.image = new Image()
-    this.image.src = 'https://dumielauxepices.net/sites/default/files/sidewalk-clipart-road-762221-3901262.jpg'
+    this.image.src = './Image/Full-Background.png'
     this.drawBack = function(){
     ctx.fillStyle = "black"
     ctx.fillRect(0,0,canvas.width,canvas.height);
     }
     this.draw= function (){
       ctx.fillRect(0,0,canvas.width,canvas.height); 
+      this.x--
+      if(this.x < -this.width)this.x=0
       ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
+      ctx.drawImage(this.image,this.x + this.width,this.y,this.width,this.height)
+
     }
     
     this.menu= function (){
@@ -78,44 +96,87 @@ function Button(type,x,y,width,height){
 }
 
 
-function Character(name,player,x){
-  this.name = name
-  this.x = x
-  this.y = canvas.height-140
-  this.width = 40
-  this.height=70
-  this.player = player
-  this.image = new Image()
-  this.draw = function (){
-    if(this.y <canvas.height-140)
-    this.y +=3.01
-    ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
-  }
-  this.moveRigth = function(){
-      if(this.x+this.width<canvas.width-30)
-        this.x+=50
-  }
-  this.moveLeft = function(){
-      if(this.x>0)
-       this.x-=50
-  }
-  this.jump = function(){
-     if(this.y>30) 
+function Character(name,player,type){
+    this.name = name
+    this.x = type === 1? 300:100
+    this.y = canvas.height-70
+    this.gravity = 2.01
+    this.width = 40
+    this.height=70
+    this.player = player
+    this.image = new Image()
+    this.image.src = type === 1? images.lola : images.manni
+    this.draw = function (){
+      if(this.y <canvas.height-140)
+      this.y +=this.gravity
+      ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
+    }
+    this.moveRigth = function(){
+        if(this.x+this.width<canvas.width-30  ){
+          this.x+=50
+        }
+    }
+    this.moveLeft = function(){
+        if(this.x>0 )
+          this.x-=50
+    }
+    this.jump = function(){
+      if(this.y>30) {
         this.y += - 200
-     if(this.y<10)
-        this.y =10
+      }
+      if(this.y<10)
+          this.y =10
+      
+     
+    }
+    this.touchObstacleVertical = function (item){ 
+
+    if(this.x+this.width >= item.x && this.x<item.x + item.width){
+        this.x--
+    }
+    
+    if(this.x+this.width >= item.x && this.x<item.x + item.width)
+      if(this.y + this.height >= item.y  && this.y < item.y + item.height){
+        this.y=item.y-this.height
+    }
   }
+  this.touchObstacleHorizontal = function (item){ 
+
+      if(this.x+this.width >= item.horizontalX && this.x<item.horizontalX + item.horizontalWidth)
+        if(this.y + this.height >= item.horizontalY  && this.y < item.horizontalY + item.horizontalHeight){
+          if(this.x+this.width >= item.horizontalX &&this.x<item.horizontalX + item.horizontalWidth)
+              this.y=item.horizontalY+item.horizontalHeight-5
+          else
+          this.y=item.horizontalY-this.height
+        }
+      
+  }
+
 }
 
-function Lola(name,player){
-  Character.call(this,name,player,300)
-  this.image.src = './Image/lola.png'
+function Obstacle(height){
+  this.x = canvas.width
+  this.y = canvas.height - height
+  this.width = 70
+  this.height = height
+  this.image = new Image()
+  this.image.src = imgObstacles[Math.floor(Math.random()*imgObstacles.length) ]
+  this.horizontalWidth = Math.floor (Math.random() * (500- 100) + 100)
+  this.horizontalHeight = 30
+  this.horizontalY = height+Math.random()*50
+  this.horizontalX = canvas.width + this.horizontalY
+  this.draw = function (){
+    ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
+    this.x--
+  }
+  this.drawHorizontal = function(){
+    this.image.src = './Image/brown_rock.png'
+      this.horizontalX--
+      ctx.drawImage(this.image,this.horizontalX,this.horizontalY,this.horizontalWidth,this.horizontalHeight)
+  }
+
 }
 
-function Manni(name,player){
-  Character.call(this,name,player,100)
-  this.image.src='./Image/manni.png'
-}
 
 //instances
   var board = new Board()
@@ -134,12 +195,17 @@ function presentation(){
 }
 
 function startGame(){
-interval = setInterval(update,1000/60)
+drawObstacles()
+interval = setInterval(update,700/60)
 }
 
 function update(){
+  frames++
   board.draw()
   drawCharacters()
+  drawObstacles()
+  checkCollitionVertical()
+  checkCollitionHorizontal()
 
 }
 function gameOver(){
@@ -174,55 +240,99 @@ function drawButtons(){
 function chooseCharacters(){
 
 }
-function generateCharacters(player){
-  
-  if(player === 1)
-  characters.push(new Lola(prompt('Player 1 ingresa tu nombre'),1))
-  else if (player === 2)
-  characters.push(new Manni(prompt('Player 2 ingresa tu nombre'),2))
-
+function generateCharacters(player,type){
+  characters.push(new Character(prompt('Player ' +player+ ' ingresa tu nombre'),player,type))
 }
+
 function drawCharacters(){
   for(var i of characters)
       i.draw()
 }
+
 function moveCharacters(e){
-  for(var i of characters){
-    if(i.player === 1)
-      switch(e.keyCode){
-        case 39:
-              i.moveRigth()
-              break 
-        case 37:
-              i.moveLeft()
-              break
-        case 38:
-              i.jump()
-              break
-        default:
-              break
-      }
-    if(i.player === 2)
-      switch(e.keyCode){
-        case 68:
-              i.moveRigth()
-              break 
-        case 65:
-              i.moveLeft()
-              break
-        case 87:
-              i.jump()
-              break
-        default:
-              break
-      }
-}
-  
-     
+    for(var i of characters){
+        if(i.player === 1)
+          switch(e.keyCode){
+            case 39:
+                  i.moveRigth()
+                  break 
+            case 37:
+                  i.moveLeft()
+                  break
+            case 38:
+                  i.jump()
+                  break
+            default:
+                  break
+        }
+        if(i.player === 2)
+          switch(e.keyCode){
+            case 68:
+                  i.moveRigth()
+                  break 
+            case 65:
+                  i.moveLeft()
+                  break
+            case 87:
+                  i.jump()
+                  break
+            default:
+                  break
+        }
+    }   
 }
 
 
+function generateObstacles(){
 
+  if( frames % trouble  === 0){
+
+    var height = Math.floor (Math.random() * (canvas.height/2 - 100) + 100)
+    
+ 
+      obstaclesVertical.push(new Obstacle(height))
+    if(obstaclesVertical[0].x<-50) obstaclesVertical.shift()
+  }
+
+  if( frames % (trouble/2)  === 0){
+
+    var height = Math.floor (Math.random() * (200 - 100) + 100)
+    
+    
+ 
+      obstaclesHorizontal.push(new Obstacle(height))
+      if(obstaclesHorizontal[0].x<-500) obstaclesHorizontal.shift()
+    }
+}
+
+function drawObstacles(){
+  generateObstacles()
+  obstaclesVertical.forEach(function(obstacles){
+      obstacles.draw()
+})
+
+obstaclesHorizontal.forEach(function(obstacles){
+    obstacles.drawHorizontal()
+})
+
+}
+
+function checkCollitionVertical(){
+
+  for(var i of obstaclesVertical){
+      characters.forEach(function (character){
+            character.touchObstacleVertical(i)
+      })
+  }
+}
+
+function checkCollitionHorizontal(){
+  for(var i of obstaclesHorizontal){
+    characters.forEach(function (character){
+          character.touchObstacleHorizontal(i)
+    })
+  }
+}
 
 
 //listeners
@@ -237,8 +347,8 @@ function moveCharacters(e){
                 if(presentations){
                   presentations=false
                   startGame()
-                  generateCharacters(2)
-                  generateCharacters(1)
+                  generateCharacters(2,2)
+                  generateCharacters(1,1)
                 }
               } 
           }
