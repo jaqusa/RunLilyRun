@@ -9,10 +9,15 @@ canvas.height = 549
 
 var interval = 0
 var frames = 0
-var trouble = 1000
+var trouble = 800
 var presentations = true
 var buttons = []
 var characters = []
+var moveWorld=-2
+var music = {
+  run: './Music/musicRun.mp3'
+}
+audio = new Audio();
 var imgObstacles = ['./Image/1.png',
                     './Image/2.png',
                     './Image/3.png',
@@ -49,7 +54,7 @@ function Board(){
     }
     this.draw= function (){
       ctx.fillRect(0,0,canvas.width,canvas.height); 
-      this.x--
+      this.x+=moveWorld
       if(this.x < -this.width)this.x=0
       ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
       ctx.drawImage(this.image,this.x + this.width,this.y,this.width,this.height)
@@ -93,6 +98,7 @@ function Button(type,x,y,width,height){
    this.drawCards = function(){
 
    }
+
 }
 
 
@@ -100,63 +106,120 @@ function Character(name,player,type){
     this.name = name
     this.x = type === 1? 300:100
     this.y = canvas.height-70
-    this.gravity = 2.01
+    this.gravity = 3.01
     this.width = 40
     this.height=70
+    this.dx=-1
+    this.points = 10000
+    this.movedx=true
+    this.moveinversedx =true
+    this.dy=- 250
+    this.canjump = true
     this.player = player
     this.image = new Image()
     this.image.src = type === 1? images.lola : images.manni
     this.draw = function (){
-      if(this.y <canvas.height-140)
-      this.y +=this.gravity
+      this.stop()
+      if(this.y < canvas.height-140)
+        this.y += this.gravity
+      else this.canjump = true
       ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
+      this.x+=this.dx
+    }
+    this.stop = function (){
+      if(this.x < 40 || moveWorld==0){
+         // moveWorld = 0
+          this.dx = 0
+      }
+      // if (this.x + this.width > canvas.width){
+      //   moveWorld -=1 
+      //   this.dx=-1
+      // }
     }
     this.moveRigth = function(){
-        if(this.x+this.width<canvas.width-30  ){
+        if(this.x+this.width<canvas.width-30 && this.movedx ){
           this.x+=50
+          moveWorld =-2
+            if(moveWorld === -1)
+              this.dx=-1
         }
     }
     this.moveLeft = function(){
-        if(this.x>0 )
+        if(this.x>0  && this.moveinversedx){
           this.x-=50
+          moveWorld=-2
+          if(moveWorld === -1)
+            this.dx=-1
+
+        }
     }
     this.jump = function(){
-      if(this.y>30) {
-        this.y += - 200
+      if(this.canjump){
+        if(this.y>30) {
+          this.y += -250
+          this.movedx =true
+          this.moveinversedx =true
+        }
+        if(this.y<10)
+            this.y=10
+
       }
-      if(this.y<10)
-          this.y =10
       
      
     }
     this.touchObstacleVertical = function (item){ 
 
-    if(this.x+this.width >= item.x && this.x<item.x + item.width){
-        this.x--
-    }
-    
-    if(this.x+this.width >= item.x && this.x<item.x + item.width)
-      if(this.y + this.height >= item.y  && this.y < item.y + item.height){
-        this.y=item.y-this.height
-    }
-  }
-  this.touchObstacleHorizontal = function (item){ 
+      if(this.y + this.height >= item.y  && this.y < item.y + item.height && this.x >= item.x-90 && this.x< item.x+5 ){
+        //this.movedx=false
+        //moveWorld = 0
+      }
 
-      if(this.x+this.width >= item.horizontalX && this.x<item.horizontalX + item.horizontalWidth)
-        if(this.y + this.height >= item.horizontalY  && this.y < item.horizontalY + item.horizontalHeight){
-          if(this.x+this.width >= item.horizontalX &&this.x<item.horizontalX + item.horizontalWidth)
-              this.y=item.horizontalY+item.horizontalHeight-5
-          else
-          this.y=item.horizontalY-this.height
-        }
+      if(this.y + this.height >= item.y  && this.y < item.y + item.height && this.x >= item.x+item.width && this.x< item.x+item.width+65 ){
+       // this.moveinversedx=false
+       // moveWorld=0
+      }
+
       
+      if(this.x+this.width >= item.x && this.x<item.x + item.width)
+        if(this.y + this.height > item.y  && this.y < item.y + item.height)
+         { this.dx = -30
+           //this.y=item.y - this.height
+           // this.movedx = true
+           // this.moveinversedx = true 
+            this.canjump =true
+            this.points -= 10
+          }
+        
+      
+    } 
+    this.touchObstacleHorizontal = function (item){ 
+    
+
+      if(this.x+this.width >= item.horizontalX  && this.x<item.horizontalX + item.horizontalWidth)
+        if(this.y + this.height > item.horizontalY  && this.y < item.horizontalY + item.horizontalHeight)
+         { 
+           this.y=item.horizontalY - this.height
+           // this.movedx = true
+           // this.moveinversedx = true 
+            this.canjump =true
+          }
+        
+    }
+  
+
+  this.touch = function (item){
+    return ((this.x < item.x + item.width) && 
+    (this.x + this.width > item.x) && 
+    (this.y<item.y + item.height) && 
+    (this.y + this.height > item.y) )
+
   }
 
 }
 
 function Obstacle(height){
   this.x = canvas.width
-  this.y = canvas.height - height
+  this.y = canvas.height - height -30
   this.width = 70
   this.height = height
   this.image = new Image()
@@ -167,11 +230,11 @@ function Obstacle(height){
   this.horizontalX = canvas.width + this.horizontalY
   this.draw = function (){
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
-    this.x--
+    this.x+=moveWorld
   }
   this.drawHorizontal = function(){
     this.image.src = './Image/brown_rock.png'
-      this.horizontalX--
+      this.horizontalX+=moveWorld
       ctx.drawImage(this.image,this.horizontalX,this.horizontalY,this.horizontalWidth,this.horizontalHeight)
   }
 
@@ -196,7 +259,10 @@ function presentation(){
 
 function startGame(){
 drawObstacles()
-interval = setInterval(update,700/60)
+interval = setInterval(update,300/60)
+audio.src= music.run
+audio.loop = true
+audio.play()
 }
 
 function update(){
@@ -206,6 +272,7 @@ function update(){
   drawObstacles()
   checkCollitionVertical()
   checkCollitionHorizontal()
+  Score()
 
 }
 function gameOver(){
@@ -285,7 +352,7 @@ function moveCharacters(e){
 
 function generateObstacles(){
 
-  if( frames % trouble  === 0){
+  if( frames % (trouble/4)  === 0){
 
     var height = Math.floor (Math.random() * (canvas.height/2 - 100) + 100)
     
@@ -306,10 +373,13 @@ function generateObstacles(){
 }
 
 function drawObstacles(){
+  if(moveWorld){
   generateObstacles()
+  }
   obstaclesVertical.forEach(function(obstacles){
       obstacles.draw()
-})
+  })
+
 
 obstaclesHorizontal.forEach(function(obstacles){
     obstacles.drawHorizontal()
@@ -333,6 +403,16 @@ function checkCollitionHorizontal(){
     })
   }
 }
+
+function Score(){
+  ctx.fillStyle = "black"
+  ctx.font = " bold 20px Arial"
+  ctx.fillText('Player 1: ' +characters[0].points, 100,50)
+  ctx.fillText('Player 2: ' +characters[1].points, canvas.width - 300,50)
+}
+
+
+
 
 
 //listeners
