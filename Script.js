@@ -282,7 +282,7 @@ drawObstacles()
 interval = 0
 frames = 0
 trouble = 800
-time = 60
+time = 30
 interval = setInterval(update,300/60)
 audio.src= music.run
 audio.loop = true
