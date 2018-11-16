@@ -232,11 +232,14 @@ function Character(name,player,type){
 
   }
 
+
+
+
 }
 
-function Obstacle(height){
+function Obstacle(height,y){
   this.x = canvas.width
-  this.y = canvas.height - height -30
+  this.y = y || canvas.height - height -30
   this.width = 70
   this.height = height
   this.image = new Image()
@@ -280,7 +283,7 @@ drawObstacles()
 interval = 0
 frames = 0
 trouble = 800
-time = 5
+time = 60
 interval = setInterval(update,300/60)
 audio.src= music.run
 audio.loop = true
@@ -297,10 +300,11 @@ function update(){
     drawObstacles()
     checkCollitionVertical()
     checkCollitionHorizontal()
+    push()
     Score()
     gameOver()
 
-    if(level>3)
+    if(level>3 || characters[0].points <=0 || characters[1].points<=0)
       win()
 }
 function gameOver(){
@@ -354,6 +358,10 @@ function win(){
         clearInterval(interval)
         interval = null
 
+      if(characters[0].x>characters[1].x)
+          characters[0].points +=1000
+      else 
+        characters[1].points +=1000
 
       if( points[0]>points[1]){
 
@@ -454,24 +462,54 @@ function moveCharacters(e){
 
 function generateObstacles(){
 
-  if( frames % (trouble)  === 0){
+  if( frames % (trouble/2)  === 0){
 
-    if(time === 100 || time===60 || time === 20) trouble -=200
+    if(( time === 20 )&& trouble>200) trouble -=200
     var height = Math.floor (Math.random() * ((canvas.height/2 - 100 ) - 100) + 100)
     
  
       obstaclesVertical.push(new Obstacle(height))
+    // if(time=== 90 || time=== 70 || time === 40 || time === 10 )
+    // obstaclesVertical.push(new Obstacle(height,0))
+
     if(obstaclesVertical[0].x<-50) obstaclesVertical.shift()
   }
 
-  if( frames % (trouble)  === 0){
-
+  if(time>45){
+  if( frames % (400)  === 0){
+  
     var height = Math.floor (Math.random() * (250 - 150) + 150)
     
  
       obstaclesHorizontal.push(new Obstacle(height))
       if(obstaclesHorizontal[0].x<-500) obstaclesHorizontal.shift()
     }
+}if(time<45 && time>20){
+
+  if( frames % (600)  === 0){
+  
+    var height = Math.floor (Math.random() * (250 - 150) + 150)
+    
+  
+      obstaclesHorizontal.push(new Obstacle(height))
+      if(obstaclesHorizontal[0].x<-500) obstaclesHorizontal.shift()
+    }
+
+
+
+}else {
+  if( frames % (600)  === 0){
+  
+  var height = Math.floor (Math.random() * (250 - 150) + 150)
+  
+
+    obstaclesHorizontal.push(new Obstacle(height))
+    if(obstaclesHorizontal[0].x<-500) obstaclesHorizontal.shift()
+  }
+
+}
+
+
 }
 
 function drawObstacles(){
@@ -505,6 +543,14 @@ function checkCollitionHorizontal(){
           character.touchObstacleHorizontal(i)
     })
   }
+}
+
+function push(){
+  
+ if( characters[0].touch(characters[1]) )
+    characters[1].dx =-30
+  if( characters[1].touch(characters[0]) )
+    characters[0].dx =-30
 }
 
 function Score(){
