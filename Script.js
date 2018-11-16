@@ -15,7 +15,6 @@ var level = 1
 var presentations = true
 var buttons = []
 var characters = []
-var points = []
 var moveWorld=-2
 var music = {
   run: './Music/musicRun.mp3',
@@ -313,9 +312,6 @@ function gameOver(){
     clearInterval(interval)
 
     
-      
-      for(var i of characters)
-        points.push(i.points)
 
 
       ctx.fillStyle = "black"
@@ -363,7 +359,7 @@ function win(){
       else 
         characters[1].points +=1000
 
-      if( points[0]>points[1]){
+      if( characters[0].points>characters[1].points){
 
         ctx.fillStyle = "black"
         ctx.font = " bold 100px Arial"
