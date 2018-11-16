@@ -10,12 +10,16 @@ canvas.height = 549
 var interval = 0
 var frames = 0
 var trouble = 800
+var time = 0
+var level = 1
 var presentations = true
 var buttons = []
 var characters = []
+var points = []
 var moveWorld=-2
 var music = {
-  run: './Music/musicRun.mp3'
+  run: './Music/musicRun.mp3',
+  winner:'./Music/We are the Champions.mp3'
 }
 audio = new Audio();
 var imgObstacles = ['./Image/1.png',
@@ -32,8 +36,13 @@ var obstaclesVertical = []
 var obstaclesHorizontal = []
 var images = {
   lola: './Image/lily.png',
-  manni: './Image/manni.png'
-
+  manni: './Image/manni.png',
+  run1 : './Image/run1.png',
+  run2: './Image/run2.png',
+  run3: './Image/run3.png',
+  winner: './Image/winner.png',
+  instruccions:'./Image/instruccions.png',
+  logo:'./Image/logo.png'
 }
     
 
@@ -47,12 +56,20 @@ function Board(){
     this.width=canvas.width
     this.height=canvas.height
     this.image = new Image()
-    this.image.src = './Image/Full-Background.png'
     this.drawBack = function(){
-    ctx.fillStyle = "black"
+    ctx.fillStyle = "#C8C8C8"
     ctx.fillRect(0,0,canvas.width,canvas.height);
     }
+
     this.draw= function (){
+      if(level === 1)
+      this.image.src = images.run1
+      if(level === 2 )
+      this.image.src = images.run2
+      if(level === 3)
+      this.image.src = images.run3
+     
+
       ctx.fillRect(0,0,canvas.width,canvas.height); 
       this.x+=moveWorld
       if(this.x < -this.width)this.x=0
@@ -60,10 +77,13 @@ function Board(){
       ctx.drawImage(this.image,this.x + this.width,this.y,this.width,this.height)
 
     }
+   
     
     this.menu= function (){
     ctx.fillStyle = "red"
     ctx.font = " bold 80px Arial"
+    //this.image.src = './Image/logo.png'
+   // ctx.drawImage(images.logo,480,100,300,97)
     ctx.fillText('Run Lily Run ',480, 100 )
     }
 
@@ -131,10 +151,7 @@ function Character(name,player,type){
          // moveWorld = 0
           this.dx = 0
       }
-      // if (this.x + this.width > canvas.width){
-      //   moveWorld -=1 
-      //   this.dx=-1
-      // }
+
     }
     this.moveRigth = function(){
         if(this.x+this.width<canvas.width-30 && this.movedx ){
@@ -183,7 +200,7 @@ function Character(name,player,type){
       if(this.x+this.width >= item.x && this.x<item.x + item.width)
         if(this.y + this.height > item.y  && this.y < item.y + item.height)
          { this.dx = -30
-           //this.y=item.y - this.height
+            this.y=item.y - this.height
            // this.movedx = true
            // this.moveinversedx = true 
             this.canjump =true
@@ -226,7 +243,7 @@ function Obstacle(height){
   this.image.src = imgObstacles[Math.floor(Math.random()*imgObstacles.length) ]
   this.horizontalWidth = Math.floor (Math.random() * (500- 100) + 100)
   this.horizontalHeight = 30
-  this.horizontalY = height+Math.random()*50
+  this.horizontalY = height
   this.horizontalX = canvas.width + this.horizontalY
   this.draw = function (){
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
@@ -259,6 +276,11 @@ function presentation(){
 
 function startGame(){
 drawObstacles()
+
+interval = 0
+frames = 0
+trouble = 800
+time = 5
 interval = setInterval(update,300/60)
 audio.src= music.run
 audio.loop = true
@@ -266,19 +288,99 @@ audio.play()
 }
 
 function update(){
-  frames++
-  board.draw()
-  drawCharacters()
-  drawObstacles()
-  checkCollitionVertical()
-  checkCollitionHorizontal()
-  Score()
 
+  if(frames%320 ===0)
+    time--
+    frames++
+    board.draw()
+    drawCharacters()
+    drawObstacles()
+    checkCollitionVertical()
+    checkCollitionHorizontal()
+    Score()
+    gameOver()
+
+    if(level>3)
+      win()
 }
 function gameOver(){
 
+  if(time===0 && level<4){
+    clearInterval(interval)
+
+    
+      
+      for(var i of characters)
+        points.push(i.points)
+
+
+      ctx.fillStyle = "black"
+      ctx.font = " bold 150px Arial"
+      ctx.fillText('Level ' + level  ,500, 200) 
+      ctx.font = " bold 100px Arial"
+      ctx.fillText(characters[0].name ,300, 300) 
+      ctx.fillText(characters[0].points,300,400)
+      ctx.fillText(characters[1].name ,850,300) 
+      ctx.fillText(characters[1].points,850,400)
+      ctx.fillStyle = "white"
+      ctx.font = " bold 50px Arial"
+      ctx.fillText('Press Enter to continue .....' ,450, 500) 
+      level++
+      if(level <=3)
+      addEventListener('keyup',function(e){
+        if(e.keyCode === 13){
+          startGame()
+        }
+      })
+    
+
+  }
+
+     
+
+
+
 }
 function win(){
+
+  //audio2 = new Audio( )
+  audio.pause()
+  audio.src = music.winner
+
+  audio.play()
+
+        time = 1
+        frames = null
+        clearInterval(interval)
+        interval = null
+
+
+      if( points[0]>points[1]){
+
+        ctx.fillStyle = "black"
+        ctx.font = " bold 100px Arial"
+        ctx.fillText(' WINNER ' ,550, 250) 
+        ctx.font = " bold 150px Arial"
+        ctx.fillText(characters[0].name ,550, 400) 
+        ctx.font = " bold 20px Arial"
+        ctx.fillText(characters[1].name + ' Better luck next time ....' ,450, 450) 
+      
+
+      }
+      else{
+
+
+        ctx.fillStyle = "black"
+        ctx.font = " bold 100px Arial"
+        ctx.fillText(' WINNER ' ,550, 250) 
+        ctx.font = " bold 150px Arial"
+        ctx.fillText(characters[1].name ,550, 400) 
+        ctx.font = " bold 20px Arial"
+        ctx.fillText(characters[0].name + ' Better luck next time ....' ,450, 450) 
+      
+
+      }
+  
 
 }
 
@@ -308,7 +410,7 @@ function chooseCharacters(){
 
 }
 function generateCharacters(player,type){
-  characters.push(new Character(prompt('Player ' +player+ ' ingresa tu nombre'),player,type))
+  characters.push(new Character(prompt('Player ' +player+ ' ingresa tu nombre').toUpperCase(),player,type))
 }
 
 function drawCharacters(){
@@ -352,19 +454,19 @@ function moveCharacters(e){
 
 function generateObstacles(){
 
-  if( frames % (trouble/4)  === 0){
+  if( frames % (trouble)  === 0){
 
-    var height = Math.floor (Math.random() * (canvas.height/2 - 100) + 100)
+    if(time === 100 || time===60 || time === 20) trouble -=200
+    var height = Math.floor (Math.random() * ((canvas.height/2 - 100 ) - 100) + 100)
     
  
       obstaclesVertical.push(new Obstacle(height))
     if(obstaclesVertical[0].x<-50) obstaclesVertical.shift()
   }
 
-  if( frames % (trouble/2)  === 0){
+  if( frames % (trouble)  === 0){
 
-    var height = Math.floor (Math.random() * (200 - 100) + 100)
-    
+    var height = Math.floor (Math.random() * (250 - 150) + 150)
     
  
       obstaclesHorizontal.push(new Obstacle(height))
@@ -376,14 +478,15 @@ function drawObstacles(){
   if(moveWorld){
   generateObstacles()
   }
-  obstaclesVertical.forEach(function(obstacles){
-      obstacles.draw()
-  })
+
+    obstaclesVertical.forEach(function(obstacles){
+        obstacles.draw()
+    })
 
 
-obstaclesHorizontal.forEach(function(obstacles){
+    obstaclesHorizontal.forEach(function(obstacles){
     obstacles.drawHorizontal()
-})
+    })
 
 }
 
@@ -405,11 +508,21 @@ function checkCollitionHorizontal(){
 }
 
 function Score(){
+
   ctx.fillStyle = "black"
   ctx.font = " bold 20px Arial"
-  ctx.fillText(characters[0].name + ' : '  +characters[0].points, 100,50)
-  ctx.fillText(characters[1].name + ' : ' +characters[1].points, canvas.width - 300,50)
+  ctx.fillText(characters[0].name ,100,40) 
+  ctx.fillText(characters[0].points, 100,80)
+  ctx.fillText(characters[1].name ,canvas.width - 150 ,40) 
+  ctx.fillText(characters[1].points,canvas.width - 150,80)
+  ctx.fillStyle = "red"
+  ctx.font = " bold 40px Arial"
+  ctx.fillText( ' TIME ', canvas.width/2 -75,50)
+  ctx.font = " bold 20px Arial"
+  ctx.fillText( time , canvas.width/2 -40,80)
+
 }
+
 
 
 
@@ -427,8 +540,8 @@ function Score(){
                 if(presentations){
                   presentations=false
                   startGame()
-                  generateCharacters(2,2)
                   generateCharacters(1,1)
+                  generateCharacters(2,2)
                 }
               } 
           }
@@ -443,7 +556,15 @@ function Score(){
               if(e.clientY - canvas.offsetTop > buttons[1].y
               && e.clientY - canvas.offsetTop < buttons[1].y+ buttons[1].height){ 
                 if(presentations){
-                  
+                  board.drawBack()
+                  ctx.fillStyle = "red"
+                  ctx.font = " bold 80px Arial"
+                  ctx.fillText("Run Lily Run", 480,100)
+                  ctx.font = " bold 40px Arial"
+                  ctx.fillText(" Player 1: ⬅️ Move Left , Move Rigth ➡️ , Jump ⬆️ ",200,300)
+                  ctx.fillText(" Player 2: 🅰️  Move Left , Move Rigth 🇩 , Jump 🇼 ",200,400)
+
+                  //ctx.drawImage(images.instruccions,0,0,100,100)
                 }
               } 
           }
@@ -467,7 +588,7 @@ function Score(){
                   ctx.font = " bold 20px Arial"
                   ctx.fillText(" For more games visit jaqusa.tk ", 580,400)
                 
-                
+                  
                 }
               } 
           }
